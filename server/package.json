@@ -1,0 +1,19 @@
+{
+  "name": "soom-raj-portfolio-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "latest",
+    "nodemailer": "^10.0.10"
+  }
+}
