@@ -5,8 +5,9 @@ import authRoutes from './routes/authRoutes.js';
 import projectRoutes from './routes/projectRoutes.js';
 
 const app = express();
+const allowedOrigins = [process.env.CLIENT_ORIGIN, 'https://soomraj-omega.vercel.app', 'http://localhost:5173'].filter(Boolean);
 
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)), credentials: true }));
 app.use(cookieParser());
 app.use(express.json({ limit: '2mb' }));
 

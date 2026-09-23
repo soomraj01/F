@@ -1,4 +1,4 @@
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const apiBaseUrl = import.meta.env.VITE_API_URL || (window.location.hostname.endsWith('vercel.app') ? 'https://server-virid-one-67.vercel.app/api' : 'http://localhost:5000/api');
 
 // This function requests a one-time login code from the server email provider.
 export async function requestLoginOtp(email) {
