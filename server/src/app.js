@@ -9,7 +9,7 @@ const allowedOrigins = [process.env.CLIENT_ORIGIN, 'https://soomraj-omega.vercel
 
 app.use(cors({ origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)), credentials: true }));
 app.use(cookieParser());
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '20mb' }));
 
 app.get('/api/health', (_request, response) => response.json({ status: 'ok', service: 'portfolio-api' }));
 app.use('/api/auth', authRoutes);
