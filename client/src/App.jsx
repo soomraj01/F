@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ProjectCard from './components/ProjectCard';
 import StatCard from './components/StatCard';
@@ -7,6 +7,7 @@ import UploadBox from './components/UploadBox';
 import PortfolioPage from './pages/PortfolioPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import { loadStoredProjects, saveStoredProjects } from './services/projectStorage';
+import { createRemoteProject, deleteRemoteProject, fetchProjects, updateRemoteProject } from './services/projectApi';
 import { getCurrentAdmin, logoutAdmin, requestLoginOtp, verifyLoginOtp } from './services/authApi';
 import {
   ArrowLeft,
@@ -122,18 +123,39 @@ function useProjects() {
     const legacyCategories = { 'Landing Page': 'HTML Templates', Business: 'Wordpress', Portfolio: 'HTML Templates', Ecommerce: 'React JS', 'Web App': 'React JS' };
     return JSON.parse(savedProjects).map((project) => ({ ...project, category: legacyCategories[project.category] || project.category }));
   });
+  const localProjects = useRef(null);
 
   useEffect(() => {
     loadStoredProjects().then((storedProjects) => {
-      if (storedProjects) setProjects(storedProjects);
-    }).catch((error) => console.error('Could not load saved projects:', error));
+      if (storedProjects) { localProjects.current = storedProjects; setProjects(storedProjects); }
+    }).catch((error) => console.error('Could not load local projects:', error));
+    fetchProjects().then(setProjects).catch((error) => console.error('Could not load public projects:', error));
   }, []);
 
-  // This function keeps the portfolio copy synchronized in larger browser storage.
+  // This function loads shared projects and migrates this browser's old local projects once.
+  const refreshProjects = async (includeDrafts = false) => {
+    const remoteProjects = await fetchProjects(includeDrafts);
+    if (includeDrafts && remoteProjects.length === 0 && localProjects.current?.length) {
+      const migratedProjects = [];
+      for (const project of localProjects.current) migratedProjects.push(await createRemoteProject({ ...project, id: undefined, _id: undefined }));
+      setProjects(migratedProjects);
+      return migratedProjects;
+    }
+    setProjects(remoteProjects);
+    return remoteProjects;
+  };
+
+  // This function synchronizes project additions, edits, and deletions with MongoDB.
   const saveProjects = async (nextProjects) => {
     try {
-      await saveStoredProjects(nextProjects);
-      setProjects(nextProjects);
+      const previousProjects = projects;
+      const previousIds = new Set(previousProjects.map((project) => project.id));
+      const nextIds = new Set(nextProjects.map((project) => project.id));
+      for (const project of previousProjects) if (!nextIds.has(project.id) && project.id) await deleteRemoteProject(project.id);
+      const savedProjects = [];
+      for (const project of nextProjects) savedProjects.push(previousIds.has(project.id) ? await updateRemoteProject(project) : await createRemoteProject({ ...project, id: undefined, _id: undefined }));
+      await saveStoredProjects(savedProjects);
+      setProjects(savedProjects);
       return true;
     } catch (error) {
       console.error('Could not save projects:', error);
@@ -141,16 +163,16 @@ function useProjects() {
     }
   };
 
-  return { projects, saveProjects };
+  return { projects, saveProjects, refreshProjects };
 }
 
 function App() {
-  const { projects, saveProjects } = useProjects();
+  const { projects, saveProjects, refreshProjects } = useProjects();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    getCurrentAdmin().then(setIsAuthenticated).catch(() => setIsAuthenticated(false)).finally(() => setAuthChecked(true));
+    getCurrentAdmin().then((authenticated) => { setIsAuthenticated(authenticated); if (authenticated) refreshProjects(true); }).catch(() => setIsAuthenticated(false)).finally(() => setAuthChecked(true));
   }, []);
 
   // This function clears the temporary admin session and returns the visitor to the login screen.
@@ -159,13 +181,16 @@ function App() {
     setIsAuthenticated(false);
   };
 
+  // This function refreshes shared projects immediately after OTP login succeeds.
+  const handleAuthenticated = () => { setIsAuthenticated(true); refreshProjects(true).catch((error) => console.error('Could not load admin projects:', error)); };
+
   if (!authChecked) return null;
 
   return (
     <Routes>
       <Route path="/" element={<PortfolioPage projects={projects} categories={portfolioCategories} />} />
       <Route path="/projects/:projectId" element={<ProjectDetailPage projects={projects} />} />
-      <Route path="/admin/login" element={<AdminLogin onAuthenticated={() => setIsAuthenticated(true)} />} />
+      <Route path="/admin/login" element={<AdminLogin onAuthenticated={handleAuthenticated} />} />
       <Route
         path="/admin/*"
         element={isAuthenticated ? <AdminShell projects={projects} saveProjects={saveProjects} onLogout={logout} /> : <Navigate to="/admin/login" replace />}
