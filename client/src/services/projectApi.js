@@ -4,6 +4,12 @@ function normalizeProject(project) {
   return { ...project, id: project.id || project._id };
 }
 
+// This function removes client-only identity and display fields before MongoDB validates a project.
+function databasePayload(project) {
+  const { id, _id, updatedAt, createdAt, ...payload } = project;
+  return payload;
+}
+
 // This function preserves the backend's useful error message for the admin form.
 async function parseResponse(response, fallbackMessage) {
   let data = {};
@@ -30,12 +36,12 @@ export async function fetchProjects(includeDrafts = false) {
 
 // This function creates a project in the shared backend database.
 export async function createRemoteProject(project) {
-  return normalizeProject(await requestJson(`${apiBaseUrl}/projects`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(project) }, 'Could not create project.'));
+  return normalizeProject(await requestJson(`${apiBaseUrl}/projects`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(databasePayload(project)) }, 'Could not create project.'));
 }
 
 // This function updates a shared project, including its published or draft status.
 export async function updateRemoteProject(project) {
-  return normalizeProject(await requestJson(`${apiBaseUrl}/projects/${project.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(project) }, 'Could not update project.'));
+  return normalizeProject(await requestJson(`${apiBaseUrl}/projects/${project.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(databasePayload(project)) }, 'Could not update project.'));
 }
 
 // This function removes a project from the shared backend database.
