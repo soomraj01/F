@@ -344,8 +344,8 @@ button {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(0, 0, 0, .04), rgba(0, 0, 0, .47));
-    opacity: .65;
+    background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, .48));
+    opacity: .35;
 }
 
 .project-card:hover .project-image-wrap img {

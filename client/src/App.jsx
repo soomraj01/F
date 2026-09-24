@@ -6,8 +6,8 @@ import StatusBadge from './components/StatusBadge';
 import UploadBox from './components/UploadBox';
 import PortfolioPage from './pages/PortfolioPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
-import { loadStoredProjects, saveStoredProjects } from './services/projectStorage';
 import { createRemoteProject, deleteRemoteProject, fetchProjects, updateRemoteProject } from './services/projectApi';
+import { loadStoredProjects, saveStoredProjects } from './services/projectStorage';
 import { getCurrentAdmin, logoutAdmin, requestLoginOtp, verifyLoginOtp } from './services/authApi';
 import {
   ArrowLeft,
@@ -117,28 +117,22 @@ const starterProjects = [
 ];
 
 function useProjects() {
-  const [projects, setProjects] = useState(() => {
-    const savedProjects = localStorage.getItem('soom-raj-projects');
-    if (!savedProjects) return starterProjects;
-    const legacyCategories = { 'Landing Page': 'HTML Templates', Business: 'Wordpress', Portfolio: 'HTML Templates', Ecommerce: 'React JS', 'Web App': 'React JS' };
-    return JSON.parse(savedProjects).map((project) => ({ ...project, category: legacyCategories[project.category] || project.category }));
-  });
+  const [projects, setProjects] = useState([]);
   const localProjects = useRef(null);
 
   useEffect(() => {
-    loadStoredProjects().then((storedProjects) => {
-      if (storedProjects) { localProjects.current = storedProjects; setProjects(storedProjects); }
-    }).catch((error) => console.error('Could not load local projects:', error));
+    loadStoredProjects().then((storedProjects) => { localProjects.current = storedProjects; }).catch((error) => console.error('Could not read local migration data:', error));
     fetchProjects().then(setProjects).catch((error) => console.error('Could not load public projects:', error));
   }, []);
 
-  // This function loads shared projects and migrates this browser's old local projects once.
+  // This function loads only the shared projects so every browser sees the same portfolio.
   const refreshProjects = async (includeDrafts = false) => {
     const remoteProjects = await fetchProjects(includeDrafts);
     if (includeDrafts && remoteProjects.length === 0 && localProjects.current?.length) {
       const migratedProjects = [];
       for (const project of localProjects.current) migratedProjects.push(await createRemoteProject({ ...project, id: undefined, _id: undefined }));
       setProjects(migratedProjects);
+      await saveStoredProjects(migratedProjects);
       return migratedProjects;
     }
     setProjects(remoteProjects);
@@ -154,7 +148,6 @@ function useProjects() {
       for (const project of previousProjects) if (!nextIds.has(project.id) && project.id) await deleteRemoteProject(project.id);
       const savedProjects = [];
       for (const project of nextProjects) savedProjects.push(previousIds.has(project.id) ? await updateRemoteProject(project) : await createRemoteProject({ ...project, id: undefined, _id: undefined }));
-      await saveStoredProjects(savedProjects);
       setProjects(savedProjects);
       return true;
     } catch (error) {
