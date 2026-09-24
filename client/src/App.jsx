@@ -177,23 +177,14 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
-  if (projects === null) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'Poppins, sans-serif',
-        fontSize: '18px'
-      }}>
-        Loading portfolio...
-      </div>
-    );
-  }
-
   useEffect(() => {
-    getCurrentAdmin().then((authenticated) => { setIsAuthenticated(authenticated); if (authenticated) refreshProjects(true); }).catch(() => setIsAuthenticated(false)).finally(() => setAuthChecked(true));
+    getCurrentAdmin()
+      .then((authenticated) => {
+        setIsAuthenticated(authenticated);
+        if (authenticated) refreshProjects(true);
+      })
+      .catch(() => setIsAuthenticated(false))
+      .finally(() => setAuthChecked(true));
   }, []);
 
   // This function clears the temporary admin session and returns the visitor to the login screen.
@@ -203,19 +194,69 @@ function App() {
   };
 
   // This function refreshes shared projects immediately after OTP login succeeds.
-  const handleAuthenticated = () => { setIsAuthenticated(true); refreshProjects(true).catch((error) => console.error('Could not load admin projects:', error)); };
+  const handleAuthenticated = () => {
+    setIsAuthenticated(true);
+    refreshProjects(true).catch((error) =>
+      console.error('Could not load admin projects:', error)
+    );
+  };
+
+  if (projects === null) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'Poppins, sans-serif',
+          fontSize: '18px',
+        }}
+      >
+        Loading portfolio...
+      </div>
+    );
+  }
 
   if (!authChecked) return null;
 
   return (
     <Routes>
-      <Route path="/" element={<PortfolioPage projects={projects} categories={portfolioCategories} />} />
-      <Route path="/projects/:projectId" element={<ProjectDetailPage projects={projects} />} />
-      <Route path="/admin/login" element={<AdminLogin onAuthenticated={handleAuthenticated} />} />
+      <Route
+        path="/"
+        element={
+          <PortfolioPage
+            projects={projects}
+            categories={portfolioCategories}
+          />
+        }
+      />
+
+      <Route
+        path="/projects/:projectId"
+        element={<ProjectDetailPage projects={projects} />}
+      />
+
+      <Route
+        path="/admin/login"
+        element={<AdminLogin onAuthenticated={handleAuthenticated} />}
+      />
+
       <Route
         path="/admin/*"
-        element={isAuthenticated ? <AdminShell projects={projects} saveProjects={saveProjects} onLogout={logout} /> : <Navigate to="/admin/login" replace />}
+        element={
+          isAuthenticated ? (
+            <AdminShell
+              projects={projects}
+              saveProjects={saveProjects}
+              onLogout={logout}
+            />
+          ) : (
+            <Navigate to="/admin/login" replace />
+          )
+        }
       />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
