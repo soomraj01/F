@@ -10,6 +10,6 @@ export async function uploadProjectImage(request, response) {
     return response.status(201).json({ url: imageUrl });
   } catch (error) {
     console.error('Cloudinary upload failed:', error);
-    return response.status(502).json({ message: 'Cloudinary rejected the image upload. Check the Cloudinary credentials and account.' });
+    return response.status(502).json({ message: `Cloudinary upload failed: ${error.message || 'check the Cloudinary credentials and account.'}`, code: error.http_code || 'CLOUDINARY_UPLOAD_FAILED' });
   }
 }
