@@ -34,4 +34,14 @@ The client uses local storage for the first working prototype so the admin flow 
 - Configure SMTP values in `server/.env` before using `/admin/login`.
 
 For Gmail, use a Google App Password as `SMTP_PASSWORD`; do not use your normal Gmail password. Project screenshots currently use local browser storage in development; Cloudinary upload wiring can be added for production.
+
+## Project image storage
+
+Project images are uploaded to Cloudinary through the authenticated server endpoint. MongoDB stores only the returned Cloudinary URLs. Add these variables to the backend `.env` and backend Vercel project:
+
+```env
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+```
 >>>>>>> ce7fbbd (initial portfolio application)

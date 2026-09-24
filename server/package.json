@@ -8,12 +8,14 @@
     "start": "node src/index.js"
   },
   "dependencies": {
+    "cloudinary": "^2.11.0",
     "cookie-parser": "^1.4.7",
     "cors": "latest",
     "dotenv": "latest",
     "express": "latest",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "latest",
+    "multer": "^2.4.0",
     "nodemailer": "^10.0.10"
   }
 }
