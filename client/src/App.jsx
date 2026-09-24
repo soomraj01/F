@@ -145,9 +145,22 @@ function useProjects() {
       const previousProjects = projects;
       const previousIds = new Set(previousProjects.map((project) => project.id));
       const nextIds = new Set(nextProjects.map((project) => project.id));
-      for (const project of previousProjects) if (!nextIds.has(project.id) && project.id) await deleteRemoteProject(project.id);
+      for (const project of previousProjects) if (!nextIds.has(project.id) && project.id) {
+        try { await deleteRemoteProject(project.id); } catch (error) { if (error.status !== 404) throw error; }
+      }
       const savedProjects = [];
-      for (const project of nextProjects) savedProjects.push(previousIds.has(project.id) ? await updateRemoteProject(project) : await createRemoteProject({ ...project, id: undefined, _id: undefined }));
+      for (const project of nextProjects) {
+        if (!previousIds.has(project.id)) {
+          savedProjects.push(await createRemoteProject({ ...project, id: undefined, _id: undefined }));
+          continue;
+        }
+        try {
+          savedProjects.push(await updateRemoteProject(project));
+        } catch (error) {
+          if (error.status !== 404) throw error;
+          savedProjects.push(await createRemoteProject({ ...project, id: undefined, _id: undefined }));
+        }
+      }
       setProjects(savedProjects);
       return true;
     } catch (error) {

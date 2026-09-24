@@ -14,7 +14,11 @@ function databasePayload(project) {
 async function parseResponse(response, fallbackMessage) {
   let data = {};
   try { data = await response.json(); } catch { /* The server may return an empty error response. */ }
-  if (!response.ok) throw new Error(data.message || `${fallbackMessage} (HTTP ${response.status}).`);
+  if (!response.ok) {
+    const error = new Error(data.message || `${fallbackMessage} (HTTP ${response.status}).`);
+    error.status = response.status;
+    throw error;
+  }
   return data;
 }
 
