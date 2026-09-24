@@ -117,7 +117,7 @@ const starterProjects = [
 ];
 
 function useProjects() {
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState(null);
   const localProjects = useRef(null);
 
   useEffect(() => {
@@ -176,6 +176,21 @@ function App() {
   const { projects, saveProjects, refreshProjects } = useProjects();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+
+  if (projects === null) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'Poppins, sans-serif',
+        fontSize: '18px'
+      }}>
+        Loading portfolio...
+      </div>
+    );
+  }
 
   useEffect(() => {
     getCurrentAdmin().then((authenticated) => { setIsAuthenticated(authenticated); if (authenticated) refreshProjects(true); }).catch(() => setIsAuthenticated(false)).finally(() => setAuthChecked(true));
